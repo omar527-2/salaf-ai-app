@@ -251,25 +251,32 @@
         async function getAiResponse(userQuestion, type) {
             const systemPrompt = systemPrompts[type];
             const finalPrompt = `${systemPrompt}\n\nسؤال المستخدم: "${userQuestion}"`;
-            const apiKey = ""; // Handled by environment
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-            const payload = { contents: [{ parts: [{ text: finalPrompt }] }] };
-
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) throw new Error(`API Error: ${response.status}`);
             
-            const result = await response.json();
+            // This is the new URL for our Netlify function
+            const functionUrl = '/.netlify/functions/get-ai-response';
 
-            if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
-                return result.candidates[0].content.parts[0].text;
-            } else {
-                console.error("Invalid response or blocked prompt:", result);
-                return "لم أتمكن من معالجة هذا السؤال. قد يكون مخالفاً لسياسات الأمان أو حاول بصيغة أخرى.";
+            try {
+                const response = await fetch(functionUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: finalPrompt })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                if(result.error) {
+                    console.error("Function returned an error:", result.error);
+                    return "حدث خطأ من الخادم. يرجى المحاولة مرة أخرى.";
+                }
+
+                return result.reply;
+
+            } catch (error) {
+                console.error("Fetch to function failed:", error);
+                return "حدث خطأ في الاتصال بالخادم. يرجى مراجعة وحدة التحكم.";
             }
         }
     </script>
