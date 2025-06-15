@@ -11,16 +11,14 @@
     <style>
         body {
             font-family: 'Tajawal', sans-serif;
-            background-color: #1e293b; /* Dark slate blue */
+            background-color: #1e293b;
             color: #e2e8f0;
         }
         .chat-bubble-user {
             background-color: #334155;
-            align-self: flex-start;
         }
         .chat-bubble-ai {
             background-color: #475569;
-            align-self: flex-end;
         }
         .red-line {
             border-color: #ef4444;
@@ -29,17 +27,16 @@
             margin: 0 auto;
         }
         .loading-indicator {
-            display: none; /* Hidden by default */
+            display: none;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: flex-start; /* Correct for RTL: show on the right */
             margin-top: 1rem;
         }
-        /* New Loading Spinner */
         .spinner {
             width: 28px;
             height: 28px;
-            border: 4px solid rgba(203, 213, 225, 0.2); /* light slate, semi-transparent */
-            border-left-color: #38bdf8; /* sky blue */
+            border: 4px solid rgba(203, 213, 225, 0.2);
+            border-left-color: #38bdf8;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin-left: 1rem;
@@ -47,48 +44,64 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #1e293b; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         
         .main-button {
              background-color: #334155;
              border: 1px solid #475569;
-             color: #e2e8f0;
-             font-weight: 700;
-             padding: 1.25rem 2rem;
-             border-radius: 0.75rem;
-             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
              transition: all 0.2s ease-in-out;
-             text-align: center;
              width: 100%;
              max-width: 400px;
         }
         .main-button:hover {
             background-color: #475569;
             transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .back-button {
+            position: absolute;
+            top: 1.25rem;
+            left: 1.25rem;
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 50%;
+            padding: 0.5rem;
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+        .back-button:hover {
+            background: rgba(71, 85, 105, 0.7);
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: flex;
+        }
+        .chat-form {
+             display: flex;
+             align-items: center;
+             gap: 0.5rem;
+             margin-top: 1rem;
         }
     </style>
 </head>
 <body class="antialiased">
 
     <!-- Landing Screen -->
-    <div id="landing-screen" class="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+    <div id="landing-screen" class="page active flex-col items-center justify-center min-h-screen p-6 text-center">
         <h1 class="text-5xl font-bold mb-4">حياك الله!</h1>
         <p class="text-xl text-slate-300 mb-12">اختر القسم الذي تحتاجه</p>
         <div class="space-y-6 w-full flex flex-col items-center">
-            <button id="creed-button" class="main-button text-2xl">
+            <button data-target="creed-page" class="main-button text-2xl p-5 rounded-lg font-bold shadow-lg">
                 <h2>قسم العقيدة</h2>
                 <p class="text-sm font-normal text-slate-400 mt-1">لأسئلة التوحيد والأسماء والصفات</p>
             </button>
-            <button id="fatwa-button" class="main-button text-2xl">
+            <button data-target="fatwa-page" class="main-button text-2xl p-5 rounded-lg font-bold shadow-lg">
                 <h2>قسم الفتاوى</h2>
                 <p class="text-sm font-normal text-slate-400 mt-1">لأسئلة الأحكام الفقهية والحلال والحرام</p>
             </button>
-            <button id="seerah-button" class="main-button text-2xl">
+            <button data-target="seerah-page" class="main-button text-2xl p-5 rounded-lg font-bold shadow-lg">
                 <h2>قسم الأنبياء والصحابة</h2>
                 <p class="text-sm font-normal text-slate-400 mt-1">لقصص وسير الأنبياء والصحابة الكرام</p>
             </button>
@@ -98,188 +111,199 @@
             <p class="text-red-400 font-semibold">ادعوا لعمر بالصلاح</p>
             <hr class="red-line mt-3">
             <p class="text-slate-400 mt-4">
-                إذا واجهتك مشكلة، تواصل مع حساب الإنستا هذا: 
-                <span class="font-mono tracking-wider">123q_we132</span>
+                إذا واجهتك مشكلة، تواصل مع: <span class="font-mono tracking-wider">123q_we132</span>
             </p>
             <p class="mt-6 text-slate-500 text-xs">المنشئ: عمر</p>
         </div>
     </div>
 
-    <!-- Chat Interfaces Container -->
-    <div id="chat-container">
-        <!-- Creed Chat Interface -->
-        <div id="creed-interface" class="hidden h-screen flex-col p-4 max-w-4xl mx-auto">
-            <h1 class="text-3xl font-bold text-center mb-4 text-slate-200">اسأل عن عقيدة السلف</h1>
-            <div class="chat-history flex-1 overflow-y-auto p-4 space-y-6 bg-slate-900/50 rounded-lg">
-                 <div class="p-4 rounded-lg max-w-xl chat-bubble-ai"><p class="font-bold text-slate-200 mb-2">نور السلف</p><p class="text-slate-300">السلام عليكم. تفضل بالسؤال في عقيدة السلف الصالح.</p></div>
-            </div>
-            <div class="loading-indicator"><div class="spinner"></div><p class="mr-3 text-slate-400">يفكر...</p></div>
-            <form class="chat-form mt-4 flex items-center gap-2" data-type="creed">
-                <input type="text" class="user-input flex-1 p-3 bg-slate-700 text-slate-200 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="اكتب سؤالك في العقيدة..." autocomplete="off">
-                <button type="submit" class="p-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg shadow-md transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                </button>
-            </form>
+    <!-- Creed Chat Page -->
+    <div id="creed-page" class="page h-screen flex-col p-4 max-w-4xl mx-auto relative">
+        <button class="back-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-300"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+        <h1 class="text-3xl font-bold text-center mb-4 text-slate-200">اسأل عن عقيدة السلف</h1>
+        <div class="chat-history flex-1 overflow-y-auto p-4 space-y-6 bg-slate-900/50 rounded-lg">
+            <div class="flex justify-start w-full"><div class="p-4 rounded-lg max-w-xl chat-bubble-ai"><p class="font-bold text-slate-200 mb-2">نور السلف</p><p class="text-slate-300">السلام عليكم. أنا نور السلف، تفضل بالسؤال في عقيدة السلف الصالح.</p></div></div>
         </div>
-        
-        <!-- Fatwa Chat Interface -->
-        <div id="fatwa-interface" class="hidden h-screen flex-col p-4 max-w-4xl mx-auto">
-            <h1 class="text-3xl font-bold text-center mb-4 text-slate-200">اسأل عن فتوى شرعية</h1>
-            <div class="chat-history flex-1 overflow-y-auto p-4 space-y-6 bg-slate-900/50 rounded-lg">
-                <div class="p-4 rounded-lg max-w-xl chat-bubble-ai"><p class="font-bold text-slate-200 mb-2">فقيه السنة</p><p class="text-slate-300">السلام عليكم. تفضل بالسؤال في الأحكام الفقهية.</p></div>
-            </div>
-            <div class="loading-indicator"><div class="spinner"></div><p class="mr-3 text-slate-400">يفكر...</p></div>
-            <form class="chat-form mt-4 flex items-center gap-2" data-type="fatwa">
-                <input type="text" class="user-input flex-1 p-3 bg-slate-700 text-slate-200 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="اكتب سؤالك في الفتوى..." autocomplete="off">
-                <button type="submit" class="p-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-md transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                </button>
-            </form>
-        </div>
+        <div class="loading-indicator"><div class="spinner"></div><p class="ml-3 text-slate-400">يبحث ويدقق...</p></div>
+        <form class="chat-form" data-type="creed">
+            <input type="text" class="user-input flex-1 p-3 bg-slate-700 text-slate-200 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500" placeholder="اكتب سؤالك في العقيدة..." autocomplete="off">
+            <button type="submit" class="p-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg shadow-md transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+        </form>
+    </div>
 
-        <!-- Seerah (Prophets & Companions) Chat Interface -->
-        <div id="seerah-interface" class="hidden h-screen flex-col p-4 max-w-4xl mx-auto">
-            <h1 class="text-3xl font-bold text-center mb-4 text-slate-200">اسأل عن الأنبياء والصحابة</h1>
-            <div class="chat-history flex-1 overflow-y-auto p-4 space-y-6 bg-slate-900/50 rounded-lg">
-                <div class="p-4 rounded-lg max-w-xl chat-bubble-ai"><p class="font-bold text-slate-200 mb-2">راوي السيرة</p><p class="text-slate-300">السلام عليكم. تفضل بالسؤال عن قصص وسير الأنبياء والصحابة.</p></div>
-            </div>
-            <div class="loading-indicator"><div class="spinner"></div><p class="mr-3 text-slate-400">يفكر...</p></div>
-            <form class="chat-form mt-4 flex items-center gap-2" data-type="seerah">
-                <input type="text" class="user-input flex-1 p-3 bg-slate-700 text-slate-200 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="اكتب سؤالك عن السيرة..." autocomplete="off">
-                <button type="submit" class="p-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg shadow-md transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                </button>
-            </form>
+    <!-- Fatwa Chat Page -->
+    <div id="fatwa-page" class="page h-screen flex-col p-4 max-w-4xl mx-auto relative">
+        <button class="back-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-300"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+        <h1 class="text-3xl font-bold text-center mb-4 text-slate-200">اسأل عن فتوى شرعية</h1>
+        <div class="chat-history flex-1 overflow-y-auto p-4 space-y-6 bg-slate-900/50 rounded-lg">
+            <div class="flex justify-start w-full"><div class="p-4 rounded-lg max-w-xl chat-bubble-ai"><p class="font-bold text-slate-200 mb-2">فقيه السنة</p><p class="text-slate-300">السلام عليكم. أنا فقيه السنة، تفضل بالسؤال في الأحكام الفقهية.</p></div></div>
         </div>
+        <div class="loading-indicator"><div class="spinner"></div><p class="ml-3 text-slate-400">يبحث ويدقق...</p></div>
+        <form class="chat-form" data-type="fatwa">
+            <input type="text" class="user-input flex-1 p-3 bg-slate-700 text-slate-200 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="اكتب سؤالك في الفتوى..." autocomplete="off">
+            <button type="submit" class="p-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-md transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+        </form>
+    </div>
+
+    <!-- Seerah Chat Page -->
+    <div id="seerah-page" class="page h-screen flex-col p-4 max-w-4xl mx-auto relative">
+        <button class="back-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-300"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+        <h1 class="text-3xl font-bold text-center mb-4 text-slate-200">اسأل عن الأنبياء والصحابة</h1>
+        <div class="chat-history flex-1 overflow-y-auto p-4 space-y-6 bg-slate-900/50 rounded-lg">
+            <div class="flex justify-start w-full"><div class="p-4 rounded-lg max-w-xl chat-bubble-ai"><p class="font-bold text-slate-200 mb-2">راوي السيرة</p><p class="text-slate-300">السلام عليكم. أنا راوي السيرة، تفضل بالسؤال عن قصص وسير الأنبياء والصحابة.</p></div></div>
+        </div>
+        <div class="loading-indicator"><div class="spinner"></div><p class="ml-3 text-slate-400">يبحث ويدقق...</p></div>
+        <form class="chat-form" data-type="seerah">
+            <input type="text" class="user-input flex-1 p-3 bg-slate-700 text-slate-200 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="اكتب سؤالك عن السيرة..." autocomplete="off">
+            <button type="submit" class="p-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg shadow-md transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+        </form>
     </div>
 
     <script>
-        const landingScreen = document.getElementById('landing-screen');
-        const chatForms = document.querySelectorAll('.chat-form');
+        document.addEventListener('DOMContentLoaded', () => {
+            const allPages = document.querySelectorAll('.page');
+            const mainButtons = document.querySelectorAll('#landing-screen button');
+            const backButtons = document.querySelectorAll('.back-button');
+            const chatForms = document.querySelectorAll('.chat-form');
 
-        const aiPersonas = {
-            creed: { name: 'نور السلف', interface: document.getElementById('creed-interface') },
-            fatwa: { name: 'فقيه السنة', interface: document.getElementById('fatwa-interface') },
-            seerah: { name: 'راوي السيرة', interface: document.getElementById('seerah-interface') }
-        };
+            const personas = {
+                creed: { name: 'نور السلف' },
+                fatwa: { name: 'فقيه السنة' },
+                seerah: { name: 'راوي السيرة' }
+            };
 
-        // Switch to selected chat interface
-        function showInterface(type) {
-            landingScreen.classList.add('hidden');
-            Object.values(aiPersonas).forEach(p => p.interface.classList.add('hidden'));
-            const persona = aiPersonas[type];
-            persona.interface.classList.remove('hidden');
-            persona.interface.classList.add('flex');
-            persona.interface.querySelector('.user-input').focus();
-        }
-
-        document.getElementById('creed-button').addEventListener('click', () => showInterface('creed'));
-        document.getElementById('fatwa-button').addEventListener('click', () => showInterface('fatwa'));
-        document.getElementById('seerah-button').addEventListener('click', () => showInterface('seerah'));
-        
-        chatForms.forEach(form => {
-            form.addEventListener('submit', handleFormSubmit);
-        });
-
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-            const form = event.currentTarget;
-            const type = form.dataset.type;
-            const input = form.querySelector('.user-input');
-            const userMessage = input.value.trim();
-            if (userMessage === '') return;
-
-            const persona = aiPersonas[type];
-            const chatHistory = persona.interface.querySelector('.chat-history');
-            const loadingIndicator = persona.interface.querySelector('.loading-indicator');
-
-            appendMessage(userMessage, 'user', chatHistory);
-            input.value = '';
-            loadingIndicator.style.display = 'flex';
-
-            try {
-                const aiResponse = await getAiResponse(userMessage, type);
-                appendMessage(aiResponse, 'ai', chatHistory, persona.name);
-            } catch (error) {
-                console.error("Error fetching AI response:", error);
-                const errorMessage = "حدث خطأ. يرجى المحاولة مرة أخرى.";
-                appendMessage(errorMessage, 'ai', chatHistory, persona.name);
-            } finally {
-                 loadingIndicator.style.display = 'none';
-            }
-        }
-        
-        function appendMessage(text, sender, chatBox, aiName = 'AI') {
-            const messageWrapper = document.createElement('div');
-            const messageBubble = document.createElement('div');
-            messageBubble.classList.add('p-4', 'rounded-lg', 'max-w-xl', 'break-words');
-            
-            const sanitizedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
-            
-            if (sender === 'user') {
-                messageBubble.classList.add('chat-bubble-user');
-                messageBubble.innerHTML = `<p class="font-bold text-slate-200 mb-2">أنت</p><p class="text-slate-300">${sanitizedText}</p>`;
-                messageWrapper.classList.add('flex', 'justify-start');
-            } else { // AI
-                messageBubble.classList.add('chat-bubble-ai');
-                messageBubble.innerHTML = `
-                    <p class="font-bold text-slate-200 mb-2">${aiName}</p>
-                    <div class="text-slate-300 leading-relaxed">${sanitizedText}</div>
-                    <div class="mt-6 text-center text-sm">
-                        <hr class="red-line mb-3">
-                        <p class="text-red-400 font-semibold">ادعوا لعمر بالصلاح</p>
-                        <hr class="red-line mt-3">
-                        <p class="text-slate-400 mt-4">
-                            إذا واجهتك مشكلة، تواصل مع: 
-                            <span class="font-mono tracking-wider">123q_we132</span>
-                        </p>
-                    </div>`;
-                 messageWrapper.classList.add('flex', 'justify-end');
-            }
-            
-            messageWrapper.appendChild(messageBubble);
-            chatBox.appendChild(messageWrapper);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        const systemPrompts = {
-            creed: `أنت مساعد اسمه "نور السلف". مهمتك الوحيدة هي الإجابة على أسئلة "عقيدة السلف الصالح". إذا سئلت عن أي موضوع آخر (فقه، فتاوى، سير، علوم)، ارفض بقول: "أنا مُصمم للإجابة على أسئلة العقيدة فقط." ادعم إجاباتك بأدلة من القرآن والسنة وأقوال السلف.`,
-            fatwa: `أنت مساعد اسمه "فقيه السنة". مهمتك الوحيدة هي الإجابة على "الفتاوى والأحكام الفقهية". إذا سئلت عن أي موضوع آخر (عقيدة، سير، علوم)، ارفض بقول: "أنا مُصمم للإجابة على الفتاوى الشرعية فقط." ادعم إجاباتك بأدلة من القرآن والسنة وأقوال العلماء.`,
-            seerah: `أنت مساعد اسمه "راوي السيرة". مهمتك الوحيدة هي الإجابة على أسئلة "سير وقصص الأنبياء والصحابة". إذا سئلت عن أي موضوع آخر (عقيدة، فقه، علوم)، ارفض بقول: "أنا مُصمم للإجابة على أسئلة السيرة فقط." اعتمد على المصادر الموثوقة في السيرة النبوية والتاريخ الإسلامي.`
-        };
-
-        async function getAiResponse(userQuestion, type) {
-            const systemPrompt = systemPrompts[type];
-            const finalPrompt = `${systemPrompt}\n\nسؤال المستخدم: "${userQuestion}"`;
-            
-            // This is the new URL for our Netlify function
-            const functionUrl = '/.netlify/functions/get-ai-response';
-
-            try {
-                const response = await fetch(functionUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: finalPrompt })
+            function showPage(pageId) {
+                allPages.forEach(page => {
+                    page.classList.remove('active');
                 });
+                const targetPage = document.getElementById(pageId);
+                if (targetPage) {
+                    targetPage.classList.add('active');
+                    const input = targetPage.querySelector('.user-input');
+                    if (input) input.focus();
+                }
+            }
 
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
+            mainButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetPageId = button.getAttribute('data-target');
+                    showPage(targetPageId);
+                });
+            });
+
+            backButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    showPage('landing-screen');
+                });
+            });
+            
+            chatForms.forEach(form => {
+                form.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    const type = form.dataset.type;
+                    const chatPage = document.getElementById(`${type}-page`);
+                    const input = form.querySelector('.user-input');
+                    const userMessage = input.value.trim();
+                    
+                    if (userMessage === '') return;
+
+                    const chatHistory = chatPage.querySelector('.chat-history');
+                    const loadingIndicator = chatPage.querySelector('.loading-indicator');
+                    const personaName = personas[type].name;
+
+                    appendMessage(userMessage, 'user', chatHistory);
+                    input.value = '';
+                    loadingIndicator.style.display = 'flex';
+
+                    try {
+                        const aiResponse = await getAiResponse(userMessage, type);
+                        appendMessage(aiResponse, 'ai', chatHistory, personaName);
+                    } catch (error) {
+                        console.error("Error fetching AI response:", error);
+                        const errorMessage = "حدث خطأ جسيم. يرجى المحاولة مرة أخرى.";
+                        appendMessage(errorMessage, 'ai', chatHistory, personaName);
+                    } finally {
+                        loadingIndicator.style.display = 'none';
+                    }
+                });
+            });
+            
+            function appendMessage(text, sender, chatBox, aiName) {
+                const messageWrapper = document.createElement('div');
+                messageWrapper.classList.add('flex', 'w-full', 'mb-4');
+                
+                const messageBubble = document.createElement('div');
+                messageBubble.classList.add('p-4', 'rounded-lg', 'max-w-xl', 'break-words');
+                
+                const sanitizedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
+                
+                if (sender === 'user') {
+                    messageWrapper.classList.add('justify-end'); // User on the right
+                    messageBubble.classList.add('chat-bubble-user');
+                    messageBubble.innerHTML = `<p class="font-bold text-slate-200 mb-2">أنت</p><p class="text-slate-300">${sanitizedText}</p>`;
+                } else { 
+                    messageWrapper.classList.add('justify-start'); // AI on the left
+                    messageBubble.classList.add('chat-bubble-ai');
+                    messageBubble.innerHTML = `
+                        <p class="font-bold text-slate-200 mb-2">${aiName}</p>
+                        <div class="text-slate-300 leading-relaxed">${sanitizedText}</div>
+                        <div class="mt-6 text-center text-sm">
+                            <hr class="red-line mb-3">
+                            <p class="text-red-400 font-semibold">ادعوا لعمر بالصلاح</p>
+                            <hr class="red-line mt-3">
+                            <p class="text-slate-400 mt-4">
+                                إذا واجهتك مشكلة، تواصل مع: 
+                                <span class="font-mono tracking-wider">123q_we132</span>
+                            </p>
+                        </div>`;
                 }
                 
-                const result = await response.json();
-                if(result.error) {
-                    console.error("Function returned an error:", result.error);
-                    return "حدث خطأ من الخادم. يرجى المحاولة مرة أخرى.";
-                }
-
-                return result.reply;
-
-            } catch (error) {
-                console.error("Fetch to function failed:", error);
-                return "حدث خطأ في الاتصال بالخادم. يرجى مراجعة وحدة التحكم.";
+                messageWrapper.appendChild(messageBubble);
+                chatBox.appendChild(messageWrapper);
+                chatBox.scrollTop = chatBox.scrollHeight;
             }
-        }
+            
+            const systemPrompts = {
+                creed: `أنت "نور السلف"، عالم ذكاء اصطناعي متخصص **حصراً** في عقيدة السلف الصالح. الدقة والأمانة العلمية هما أساس عملك.
+    **قواعد صارمة:**
+    1.  **النطاق:** تخصصك هو العقيدة فقط. إذا سئلت عن فقه أو سيرة أو أي موضوع دنيوي، اعتذر بلطف بقول: "عذراً، أنا متخصص في مسائل العقيدة فقط."
+    2.  **الفهم العميق:** حلل السؤال جيداً. سؤال مثل "أثر مجاهد" هو سؤال في صميم تخصصك. أجب عليه بعمق.
+    3.  **الأمانة المطلقة:** لا تخترع مصدراً أبداً! إذا لم تكن متأكداً 100%، فقل "لم أجد مصدراً محدداً" بدلاً من اختراع مصدر.
+    4.  **قاعدة التكفير:** عند السؤال عن الفرق كالأشاعرة، يجب أن تفرق بين كفر النوع وكفر العين. اشرح أن مقالاتهم كفرية (كفر نوع) لكن تكفير الشخص المعين منهم يتطلب قيام الحجة وانتفاء الموانع، وهذا للعلماء الراسخين.`,
+                fatwa: `أنت "فقيه السنة"، عالم ذكاء اصطناعي متخصص **حصراً** في الفتاوى والأحكام الفقهية على منهج أهل السنة.
+    **قواعد صارمة:**
+    1.  **النطاق:** تخصصك هو الفقه فقط. إذا سئلت عن عقيدة أو سيرة، اعتذر بلطف بقول: "عذراً، أنا متخصص في الفتاوى الشرعية فقط."
+    2.  **الفهم العميق:** حلل السؤال جيداً. سؤال مثل "ما حكم السبي" هو سؤال فقهي. أجب عليه بتفصيل ودقة.
+    3.  **الأمانة المطلقة:** لا تخترع أدلة أو أقوالاً. كن دقيقاً في النقل. إذا لم تكن متأكداً، فقل "الله أعلم".`,
+                seerah: `أنت "راوي السيرة"، عالم ذكاء اصطناعي متخصص **حصراً** في سير الأنبياء والصحابة الكرام.
+    **قواعد صارمة:**
+    1.  **النطاق:** تخصصك هو السيرة فقط. إذا سئلت عن فقه أو عقيدة، اعتذر بلطف بقول: "عذراً، أنا متخصص في السيرة النبوية والتاريخ الإسلامي فقط."
+    2.  **المصادر الموثوقة:** اعتمد في إجاباتك على كتب السيرة والتاريخ المعتبرة عند أهل السنة.
+    3.  **الأمانة المطلقة:** كن دقيقاً جداً في الأسماء والتواريخ والأحداث. لا تخترع تفاصيل غير موجودة في المصادر.`
+            };
+
+            async function getAiResponse(userQuestion, type) {
+                const finalPrompt = `${systemPrompts[type]}\n\nسؤال المستخدم: "${userQuestion}"`;
+                const functionUrl = '/.netlify/functions/get-ai-response';
+                try {
+                    const response = await fetch(functionUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: finalPrompt })
+                    });
+                    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+                    const result = await response.json();
+                    if(result.error) {
+                        console.error("Function returned an error:", result.error);
+                        return "حدث خطأ من الخادم. يرجى المحاولة مرة أخرى.";
+                    }
+                    return result.reply;
+                } catch (error) {
+                    console.error("Fetch to function failed:", error);
+                    return "حدث خطأ في الاتصال بالخادم. يرجى مراجعة وحدة التحكم.";
+                }
+            }
+        });
     </script>
 </body>
 </html>
-
